@@ -30,11 +30,13 @@ main = do
 
 -- | Write a negation function over Bool: 'neg'
 neg :: Bool -> Bool
-neg _ = undefined
+neg True = False
+neg False = True
 
 -- | Write the conjunction function over Bool: 'and'
 and :: Bool -> Bool -> Bool
-and _ _ = undefined
+and True True = True
+and _ _ = False
 
 -- | A function stating a property of 'neg' and 'and'
 propNegAnd :: Bool -> Bool
@@ -42,39 +44,48 @@ propNegAnd b = neg (and b (neg b))
 
 -- | Write a function computing the length of a list
 length :: [a] -> Int
-length _ = undefined
+length [] = 0
+length (_ : q) = 1 + length q
 
 -- | write a function that states a property of 'length', for any input
 -- list.
 propLength :: [a] -> Bool
-propLength _ = undefined
+propLength q = length (take n q) + length (drop n q) == length q where n = div (length q) 2
 
 -- | Write a function taking the first 'n' elements of a list. The function
 -- should be total.
 take :: Int -> [a] -> [a]
-take _ _ = undefined
+take _ [] = []
+take 0 _ = []
+take n (a : q) = (a : take (n - 1) q)
+
 
 -- | Write a function taking the suffix of a list, after the first 'n' elements.
 drop :: Int -> [a] -> [a]
-drop _ _ = undefined
+drop _ [] = []
+drop 0 q = q
+drop n (_ : q) = drop (n - 1) q
 
 -- | Write a recursive function that sums the elements of a list
 sumRec :: [Int] -> Int
-sumRec _ = undefined
+sumRec [] = 0
+sumRec (a : q) = a + sumRec q
 
 -- | Write a non-recursive function that sums the elements of a list, using
 -- the foldr function: https://hoogle.haskell.org/?hoogle=foldr
 sumFold :: [Int] -> Int
-sumFold _ = undefined
+sumFold q = foldr (+) 0 q
 
 -- | Write a function stating a relation between 'sumRec' and 'sumFold'
 propSumRecSumFold :: [Int] -> Bool
-propSumRecSumFold _ = undefined
+propSumRecSumFold q = sumRec q == sumFold q
 
 -- | Write the fmap instance for 'Maybe'
 fmapMaybe :: (a -> b) -> (Maybe a) -> (Maybe b)
-fmapMaybe _f = undefined
+fmapMaybe _ Nothing = Nothing
+fmapMaybe f (Just x) = Just (f x) 
 
 -- | Write the map instance for 'List'. Don't use the standard library's 'map' function
 fmapMaybeList :: (a -> b) -> [a] -> [b]
-fmapMaybeList = undefined
+fmapMaybeList _ [] = []
+fmapMaybeList f  (x : q) = (f x : fmapMaybeList f q)
