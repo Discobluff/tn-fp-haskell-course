@@ -33,10 +33,30 @@ neg :: Bool -> Bool
 neg True = False
 neg False = True
 
+neg' :: Bool -> Bool
+neg' x = case x of
+  True -> False
+  False -> True
+
+neg'' :: Bool -> Bool
+neg'' = \case
+  True -> False
+  False -> True
+
+neg''' :: Bool -> Bool
+neg''' = \x -> case x of
+  True -> False
+  False -> True
+
 -- | Write the conjunction function over Bool: 'and'
 and :: Bool -> Bool -> Bool
 and True True = True
 and _ _ = False
+
+and' :: Bool -> Bool -> Bool
+and' x y = case (x, y) of
+  (True, True) -> True
+  _ -> False
 
 -- | A function stating a property of 'neg' and 'and'
 propNegAnd :: Bool -> Bool
@@ -46,6 +66,16 @@ propNegAnd b = neg (and b (neg b))
 length :: [a] -> Int
 length [] = 0
 length (_ : q) = 1 + length q
+
+length' :: [a] -> Int
+length' l = foldl (\acc _x -> acc + 1) 0 l
+
+length'' :: [a] -> Int
+length'' l = go 0 l
+  where
+    go :: Int -> [a] -> Int
+    go acc [] = acc
+    go acc (_x : xs) = go (acc + 1) xs
 
 -- | write a function that states a property of 'length', for any input
 -- list.
