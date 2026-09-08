@@ -67,3 +67,48 @@ main = do
 -- https://hackage.haskell.org/package/random-1.2.1/docs/System-Random.html#t:StdGen
 --
 -- Use https://hoogle.haskell.org/ to find the functions you need
+
+data Card = Knight Int Int | Soldier Int Int
+
+defKnight :: Card
+defKnight = Knight 2 2
+
+defSoldier :: Card
+defSoldier = Soldier 1 1
+
+instance Show Card where
+  show (Knight _ _ ) = "Knight"
+  show (Soldier _ _) = "Soldier"
+
+data Player = DefPlayer {
+  deck :: [Card],
+  score :: Int,
+  card1 :: Maybe Card,
+  card2 :: Maybe Card,
+  card3 :: Maybe Card
+}
+
+instance Show Player where
+  show (DefPlayer {card1, card2, card3}) = show card1 ++ "  " ++ show card2 ++ "  " ++ show card3
+
+data Board = DefBoard Player Player
+
+instance Show Board where
+  show (DefBoard p1 p2) = show p1 ++ "\n" ++ show p2
+
+-- instance Show (Maybe Card) where
+--   show (Nothing) = "Empty"
+--   show (Just card) = show card
+-- showMaybeCard :: Maybe Card -> String
+-- showMaybeCard Nothing = "Empty"
+-- showMaybeCard (Just card) = show card
+
+data Coup = DefCoup (Maybe Card) (Maybe Card) (Maybe Card)
+data Turn = One | Two
+
+play :: Board -> Turn -> Coup -> Board
+play b t (DefCoup Nothing Nothing Nothing) = attack b t
+play (DefBoard p1 _) One 
+
+attack :: Board -> Turn -> Board
+attack = undefined
