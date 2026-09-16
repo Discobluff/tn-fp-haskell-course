@@ -107,8 +107,53 @@ data Coup = DefCoup (Maybe Card) (Maybe Card) (Maybe Card)
 data Turn = One | Two
 
 play :: Board -> Turn -> Coup -> Board
-play b t (DefCoup Nothing Nothing Nothing) = attack b t
-play (DefBoard p1 _) One 
+play (DefBoard p1 p2) One coup = attack (DefBoard (placeCards p1 coup) p2) One
+play (DefBoard p1 p2) Two coup = attack (DefBoard p1 (placeCards p2 coup)) Two
+
+placeCards :: Player -> Coup -> Player
+placeCards p (DefCoup c1 c2 c3) = p
+  { card1 = place (card1 p) c1
+  , card2 = place (card2 p) c2
+  , card3 = place (card3 p) c3
+  }
+
+place :: Maybe Card -> Maybe Card -> Maybe Card
+place Nothing newCard = newCard
+place existing _ = existing
 
 attack :: Board -> Turn -> Board
-attack = undefined
+attack (DefBoard p1 p2) One =
+  let p1' = p1
+        { score = score p1 + laneScore (card1 p1) (card1 p2)
+        , card1 = attackCards (card1 p1) (card1 p2)
+        , card2 = attackCards (card2 p1) (card2 p2)
+        , card3 = attackCards (card3 p1) (card3 p2)
+        }
+  in DefBoard p1' p2
+attack (DefBoard p1 p2) Two =
+  let p2' = p2
+        { score = score p2 + laneScore (card1 p2) (card1 p1)
+        , card1 = attackCards (card1 p2) (card1 p1)
+        , card2 = attackCards (card2 p2) (card2 p1)
+        , card3 = attackCards (card3 p2) (card3 p1)
+        }
+  in DefBoard p1 p2'
+
+laneScore :: Maybe Card -> Maybe Card -> Int
+laneScore (Just c) Nothing = attackValue c
+laneScore _ _ = 0
+
+attackValue :: Card -> Int
+attackValue (Knight _ atk) = atk
+attackValue (Soldier _ atk) = atk
+
+hitpoints :: Card -> Int
+hitpoints (Knight hp _) = hp
+hitpoints (Soldier hp _) = hp
+
+attackCards :: Maybe Card -> Maybe Card -> Maybe Card
+attackCards Nothing c2 = c2
+attackCards c1 Nothing = c1
+attackCards (Just attacker) (Just defender)
+  | hitpoints defender - attackValue attacker <= 0 = Nothing
+  | otherwise = Just defender
