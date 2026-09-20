@@ -114,3 +114,10 @@ checkURLParsing :: String -> Bool
 checkURLParsing url = case parseURL url of
   Right urlParsed -> url == show urlParsed
   Left _ -> False
+
+data PathFilter = SingleWhiteCard | AnyWhiteCard | Str String
+data Filter = DefFilter {
+  domain :: String,
+  extension :: Extension,
+  path :: [PathFilter]
+}
