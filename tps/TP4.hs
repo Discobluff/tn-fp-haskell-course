@@ -11,6 +11,7 @@ import GHC.Generics
 import Generic.Random
 import System.Process
 import Test.QuickCheck
+import Data.Char (digitToInt)
 
 -- The goal of this TP is to implement an evaluator for arithmetic expressions.
 -- Here is the incremental list of objectives:
@@ -43,3 +44,57 @@ main :: IO ()
 main = do
   pyResult <- pyEval "1 + 3"
   putStrLn ("pyEval \"1 + 3\" returned: " ++ pyResult)
+  putStrLn "--------------"
+  putStrLn "HAND TESTS"
+  putStrLn "--------------"
+  let t1 = "1+1"
+  let t2 = "1-2"
+  let t3 = "1+2+3+4+5"
+  let t4 = "1+2-3+4-5"
+  putStrLn (showTest t1)
+  putStrLn (showTest t2)
+  putStrLn (showTest t3)
+  putStrLn (showTest t4)
+
+data Expr = Constant Int | Add Expr Expr | Neg Expr
+
+showTest :: String -> String
+showTest test = "Parsing '" ++ test ++ "' gives: '" ++ show (parse test) ++ "' and is evaluated to: '" ++ show (eval (parse test)) ++ "'"
+
+eval :: Expr -> Int
+eval (Constant c) = c
+eval (Add e1 e2) = (eval e1) + (eval e2)
+eval (Neg e) = - eval e
+
+instance Show Expr where
+  show (Constant c) = show c
+  show (Add e1 (Neg e2)) = show e1 ++ "-" ++ show e2
+  show (Add e1 e2) = show e1 ++ "+" ++ show e2
+  show (Neg e) = "-" ++ show e
+
+
+
+parse :: String -> Expr
+parse s = parseAux s 0 False
+
+parseAux :: String -> Int -> Bool -> Expr
+parseAux string current neg = case string of
+  [] | neg -> Neg (Constant current)
+  [] -> Constant current
+  c : q | isDigit c -> parseAux q (current*10 + digitToInt c) neg
+  '+' : q | neg -> Add (Neg (Constant current)) e where e = parseAux q 0 False
+  '+' : q -> Add (Constant current) e where e = parseAux q 0 False
+  '-' : q -> Add (Constant current) e where e = parseAux q 0 True
+  _ -> Constant 0
+
+isDigit :: Char -> Bool
+isDigit char = char >= '0' && char <= '9'
+
+-- op1 :: State -> Maybe State
+-- op2 :: State -> Maybe State
+-- op3 :: State -> Maybe Int
+-- op123 :: State -> Maybe Int
+-- op123 s = 
+--  s' <- op1 s
+--  s'' <- op2 s'
+--  op3 s''
