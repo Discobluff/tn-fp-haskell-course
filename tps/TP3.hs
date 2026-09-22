@@ -27,6 +27,23 @@ main = do
   putStrLn $ "Testing checkURLParsing on 'htp://www.google.fr/': " ++ show (checkURLParsing "htp://www.google.fr/")
   putStrLn $ "Testing checkURLParsing on 'https://github.co/dmjio/miso/pulls': " ++ show (checkURLParsing "https://github.co/dmjio/miso/pulls")
   putStrLn $ "Testing checkURLParsing on 'http://redditcom/r/haskell': " ++ show (checkURLParsing "http://redditcom/r/haskell")
+  putStrLn "--------------"
+  let filter1 = DefFilter [] "lemonde" FR []
+  let filter2 = DefFilter [] "reddit" COM [AnyWhiteCard]
+  let filter3 = DefFilter [] "reddit" COM [SingleWhiteCard, Str "haskell", AnyWhiteCard]
+  putStrLn "TESTS FILTER"
+  putStrLn "--------------"
+  putStrLn "Passing tests:"
+  putStrLn $ "Test accept on 'http://lemonde.fr' with the filter '" ++ show filter1 ++ "': " ++ show (accept filter1 "http://lemonde.fr")
+  putStrLn $ "Test accept on 'http://reddit.com.' with the filter '" ++ show filter2 ++ "': " ++ show (accept filter2 "http://reddit.com")
+  putStrLn $ "Test accept on 'http://reddit.com/bart/haskell' with the filter '" ++ show filter3 ++ "': " ++ show (accept filter3 "http://reddit.com/bart/haskell")
+  putStrLn $ "Test accept on 'http://reddit.com/bart/haskell/marge' with the filter '" ++ show filter3 ++ "': " ++ show (accept filter3 "http://reddit.com/bart/haskell/marge")
+  putStrLn "--------------"
+  putStrLn "Failing tests:"
+  putStrLn $ "Test accept on 'http://leonde.fr' with the filter '" ++ show filter1 ++ "': " ++ show (accept filter1 "http://leonde.fr")
+  putStrLn $ "Test accept on 'http://reddit.fr.' with the filter '" ++ show filter2 ++ "': " ++ show (accept filter2 "http://reddit.fr")
+  putStrLn $ "Test accept on 'http://reddit.com/bart/hasell' with the filter '" ++ show filter3 ++ "': " ++ show (accept filter3 "http://reddit.com/bart/hasell")
+  putStrLn $ "Test accept on 'http://reddit.com/haskell' with the filter '" ++ show filter3 ++ "': " ++ show (accept filter3 "http://reddit.com/haskell")
 
 
 -- 1/ Define a type representing URLs you can enter in a browser address bar,
@@ -55,6 +72,10 @@ main = do
 
 data Protocol = HTTP | HTTPS
 data Extension = FR | COM
+instance Eq Extension where
+  FR == FR = True
+  COM == COM = True
+  _ == _ = False
 
 instance Show Protocol where
   show HTTP = "http"
@@ -117,7 +138,66 @@ checkURLParsing url = case parseURL url of
 
 data PathFilter = SingleWhiteCard | AnyWhiteCard | Str String
 data Filter = DefFilter {
+  subdomains :: [String],
   domain :: String,
   extension :: Extension,
   path :: [PathFilter]
 }
+instance Show PathFilter where
+  show SingleWhiteCard = "*"
+  show AnyWhiteCard = "**"
+  show (Str s) = s
+
+instance Show Filter where
+  show filter = (intercalate "." filter.subdomains) ++ filter.domain ++ "." ++ show filter.extension ++ "/" ++ (intercalate "/" (map show filter.path))
+
+accept :: Filter -> String -> Bool
+accept filter urlString = case parseURL urlString of
+  Right url -> acceptURL filter url
+  Left _ -> False
+
+acceptURL :: Filter -> URL -> Bool
+acceptURL filter url = (acceptURLBase filter url) && (acceptURLPath filter.path url.path)
+
+acceptURLBase :: Filter -> URL -> Bool
+acceptURLBase (DefFilter {subdomains = subdomains1, domain = domain1, extension = extension1}) (DefURL { subdomains = subdomains2, domain = domain2, extension = extension2}) =
+  domain1 == domain2 && extension1 == extension2 && subdomains1 == subdomains2
+
+acceptURLPath :: [PathFilter] -> [String] -> Bool
+acceptURLPath filter url = case (filter, url) of
+  ([], []) -> True
+  (AnyWhiteCard : _ , _) -> True
+  (SingleWhiteCard : qFilter, _ : qUrl) -> acceptURLPath qFilter qUrl
+  ((Str str1) : qFilter, str2 : qUrl) -> str1 == str2 && acceptURLPath qFilter qUrl
+  _ -> False
+  
+
+checkFormat :: Filter -> Bool
+checkFormat filter = checkFormatFilterPath filter.path
+
+checkFormatFilterPath :: [PathFilter] -> Bool
+checkFormatFilterPath list = case list of
+  [] -> True 
+  AnyWhiteCard : [] -> True
+  AnyWhiteCard : _ -> False
+  _ : q -> checkFormatFilterPath q
+
+
+
+
+
+
+
+
+
+
+
+-- data Player = PlayerCtr {name :: String, age :: Int}
+-- f PlayerCtr {name = n, age = a}
+-- f PlayerCtr {name, age}
+-- f PlayerCtr {..name}
+-- f p = p.name
+-- edit :: Player -> Player
+-- edit player = player{name="Bart"}
+-- edit player@PlayerCtr{..} = player{name = name ++ " suffixe"}
+-- edit player@PlayerCtr{name = baseName} = player{name = baseName ++ " suffixe"}
