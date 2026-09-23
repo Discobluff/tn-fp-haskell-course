@@ -22,6 +22,8 @@ import Control.Monad.IO.Class
 import qualified Data.Map.Strict as Map
 import Data.Word
 import Prelude hiding ((==), Bounded, Enum, Eq, Ordering, Show)
+
+import Test.QuickCheck
 ```
 
 ```java
@@ -291,6 +293,7 @@ data BankAction =
 
 --
 
+[//]: #exdown-skip
 ```hs
 instance Semigroup BankAction where
   Spend i <> Spend j = Spend (i + j)
@@ -309,6 +312,27 @@ instance Semigroup BankAction where
 
 * `instance Semigroup [a]`
 * `instance Semigroup a => Semigroup (Maybe a)`
+
+---
+
+# Property-based testing
+
+```hs
+class Bank x where
+  -- | Get credit of account
+  getBalance :: x -> String -> Maybe Int
+  -- | Does account exist?
+  isAccount :: x -> String -> Bool
+```
+
+- What property does the `Bank` class have? 🧱
+
+???
+
+- `isJust (getBalance s) ==> isAccount s`
+- Cite a usual combination case in REST APIs
+  - Reader API (`GET`)
+  - Writer API (`POST`)
 
 ---
 
@@ -360,6 +384,25 @@ instance (Monoid a, Monoid b) => Monoid (a,b) where
 
 ---
 
+# Property-based testing once again
+
+```hs
+class Semigroup a where
+  -- | Associative binary operation
+  (<>) :: a -> a -> a
+```
+
+<!-- exdown-skip -->
+```hs
+class Semigroup a => Monoid a where
+  -- | Identity of '<>'
+  mempty :: a
+```
+
+* What properties do `Semigroup` and `Monoid` have? 🧱
+
+---
+
 # Typeclasses: `Functor`
 
 [//]: #exdown-skip
@@ -393,7 +436,7 @@ applyUpper :: Functor f => f String -> f String
 
 ---
 
-# Be lazy, rely on the compiler
+# Be lazy, rely on the compiler (2)
 
 From course 2:
 
@@ -422,11 +465,44 @@ class Arbitrary a where
   -- | Given an 'a', smaller versions of 'a'
   shrink :: a -> [a]
 
--- | Generates one of the given values
-elements :: [a] -> Gen a
+-- | Generates using the given generators, picking them at random
+oneof :: [Gen a] -> Gen a
 
 -- | Chooses one of the given generators, with a weighted random distribution.
 frequency :: [(Int, Gen a)] -> Gen a
+```
+
+---
+
+# Typeclasses for `QuickCheck` testing
+
+[//]: #exdown-skip
+```hs
+-- | Random generation and shrinking of values.
+class Arbitrary a where
+  -- | A generator of 'a'
+  arbitrary :: Gen a
+
+-- | Generates using the given generators, picking them at random
+oneof :: [Gen a] -> Gen a
+
+data Gen a
+
+instance Arbitrary Int where
+  arbitrary :: Gen Int
+
+instance Applicative Gen where
+  pure :: a -> Gen a
+```
+
+```hs
+instance Arbitrary Version where
+  arbitrary =
+    oneof
+      [ pure Alpha,
+        pure Beta,
+        SemVer <$> arbitrary <*> arbitrary <*> arbitrary
+      ]
 ```
 
 ???
