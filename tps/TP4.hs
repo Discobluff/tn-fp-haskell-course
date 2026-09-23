@@ -45,16 +45,20 @@ main = do
   pyResult <- pyEval "1 + 3"
   putStrLn ("pyEval \"1 + 3\" returned: " ++ pyResult)
   putStrLn "--------------"
-  putStrLn "HAND TESTS"
+  putStrLn "MANUAL TESTS"
   putStrLn "--------------"
   let t1 = "1+1"
   let t2 = "1-2"
   let t3 = "1+2+3+4+5"
   let t4 = "1+2-3+4-5"
+  let t5 = "12-13+14"
+  let t6 = "1-2-3-4-5-6+7"
   putStrLn (showTest t1)
   putStrLn (showTest t2)
   putStrLn (showTest t3)
   putStrLn (showTest t4)
+  putStrLn (showTest t5)
+  putStrLn (showTest t6)
 
 data Expr = Constant Int | Add Expr Expr | Neg Expr
 
@@ -68,9 +72,10 @@ eval (Neg e) = - eval e
 
 instance Show Expr where
   show (Constant c) = show c
-  show (Add e1 (Neg e2)) = show e1 ++ "-" ++ show e2
+  -- show (Add e1 (Add (Neg e2) e3)) = show e1 ++ "-" ++ show e2 ++ "+" ++ show e3
+  -- show (Add e1 (Neg e2)) = show e1 ++ "-" ++ show e2
   show (Add e1 e2) = show e1 ++ "+" ++ show e2
-  show (Neg e) = "-" ++ show e
+  show (Neg e) = "(-" ++ show e ++ ")"
 
 
 
@@ -84,9 +89,11 @@ parseAux string current neg = case string of
   c : q | isDigit c -> parseAux q (current*10 + digitToInt c) neg
   '+' : q | neg -> Add (Neg (Constant current)) e where e = parseAux q 0 False
   '+' : q -> Add (Constant current) e where e = parseAux q 0 False
+  '-' : q | neg -> Add (Neg (Constant current)) e where e = parseAux q 0 True
   '-' : q -> Add (Constant current) e where e = parseAux q 0 True
   _ -> Constant 0
-
+-- 12-13+14 Add(12, Add(Neg(13), 14))
+-- 1-2+3+4 Add(1, Add(Neg(2), Add))
 isDigit :: Char -> Bool
 isDigit char = char >= '0' && char <= '9'
 
